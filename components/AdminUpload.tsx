@@ -4,11 +4,12 @@ import React, { useState } from 'react';
 import Papa from 'papaparse';
 import { db } from '@/lib/firebase';
 import { collection, writeBatch, doc, Timestamp } from 'firebase/firestore';
-import { Upload, FileUp, CheckCircle, AlertCircle, Loader2 } from 'lucide-react';
+import { Upload, FileUp, Loader2, CheckCircle, AlertTriangle, Eye } from 'lucide-react';
 
 export default function AdminUpload() {
   const [loading, setLoading] = useState(false);
   const [status, setStatus] = useState<{ type: 'success' | 'error' | 'idle', msg: string }>({ type: 'idle', msg: '' });
+  const [filePreview, setFilePreview] = useState<string | null>(null);
 
   const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -16,135 +17,172 @@ export default function AdminUpload() {
 
     setLoading(true);
     setStatus({ type: 'idle', msg: '' });
+    setFilePreview(null);
 
-    // Configuration pour lire le fichier, même s'il vient d'un Excel français (ISO-8859-1)
     Papa.parse(file, {
       header: false,
-      skipEmptyLines: 'greedy', // Force à sauter toutes les lignes vides
-      encoding: "ISO-8859-1",   // Aide pour les accents français
+      skipEmptyLines: 'greedy',
+      encoding: "ISO-8859-1", 
       complete: async (results) => {
         try {
-          console.log("📊 Fichier brut lu (5 premières lignes) :", results.data.slice(0, 5));
+          const preview = results.data.slice(0, 5).map(row => (row as string[]).join(' | ')).join('\n');
+          setFilePreview(preview);
           await processData(results.data as string[][]);
           setLoading(false);
-          setStatus({ type: 'success', msg: 'Mise à jour du terrain réussie ! ⚽️' });
+          setStatus({ type: 'success', msg: 'Données mises à jour avec succès !' });
         } catch (error: any) {
-          console.error("❌ Erreur de traitement :", error);
+          console.error("❌ Erreur :", error);
           setLoading(false);
-          setStatus({ type: 'error', msg: error.message || "Erreur inconnue" });
+          setStatus({ type: 'error', msg: error.message });
         }
       },
-      error: (error) => {
-        console.error("Erreur PapaParse:", error);
+      error: () => {
         setLoading(false);
-        setStatus({ type: 'error', msg: "Erreur de lecture du fichier CSV." });
+        setStatus({ type: 'error', msg: "Fichier illisible." });
       }
     });
   };
 
   const processData = async (rows: string[][]) => {
-    // 1. Trouver la ligne d'en-tête
     let headerRowIndex = -1;
-    const colMap: any = {};
+    const colMap: any = {
+      region: 0, // A
+      store: 1,  // B
+    };
+    
+    // Nettoyage de chaine
+    const cleanStr = (str: string) => str?.toString().toUpperCase()
+      .replace(/\u00A0/g, ' ')
+      .replace(/[ÃÀÁÂÃÄÅ]/g, 'A')
+      .replace(/[Ç]/g, 'C')
+      .replace(/[ÈÉÊË]/g, 'E')
+      .trim() || "";
 
-    console.log(`🔍 Recherche des colonnes dans ${rows.length} lignes...`);
+    const cleanNum = (val: string) => {
+      if (!val) return 0;
+      const clean = val.toString().replace(/\s/g, '').replace(/\u00A0/g, '').replace(',', '.').replace('%', '').replace(/[^\d.-]/g, '');
+      const num = parseFloat(clean);
+      return isNaN(num) ? 0 : num;
+    };
 
-    // On cherche dans les 30 premières lignes
+    console.log(`🔍 Analyse de ${rows.length} lignes...`);
+
+    // 1. RECHERCHE EN-TÊTE
     for (let i = 0; i < Math.min(rows.length, 30); i++) {
-      const row = rows[i];
-      // On convertit toute la ligne en une seule chaine pour chercher les mots clés
-      const rowString = JSON.stringify(row).toUpperCase();
+      const rowStr = rows[i].map(c => cleanStr(c)).join(';');
       
-      // On cherche "CA N" et "BUDGET" (insensible à la casse)
-      if (rowString.includes('CA N') && rowString.includes('BUDGET')) {
+      // On cherche les mots clés TRC / GLD / OBJECTIF
+      if (rowStr.includes('TRC') || rowStr.includes('GLD') || rowStr.includes('OBJECTIF')) {
         headerRowIndex = i;
-        console.log("✅ Ligne d'en-tête trouvée à l'index :", i);
-        
-        // MAPPING DES COLONNES
-        row.forEach((colName, index) => {
-          if (!colName) return;
-          const cleanName = colName.toString().trim().toUpperCase();
-          
-          if (cleanName === 'CA N') colMap.ca_n = index;
-          if (cleanName === 'CA N-1') colMap.ca_n1 = index;
-          if (cleanName === 'BUDGET') colMap.budget = index;
+        rows[i].forEach((colRaw, index) => {
+          const name = cleanStr(colRaw);
+          // Mapping dynamique des colonnes de données (à partir de C)
+          if (name.includes('TRC') && (name.includes('OBJ') || name.includes('BUT'))) colMap.trc_obj = index;
+          if (name.includes('TRC') && (name.includes('REAL') || name.includes('FAIT'))) colMap.trc_real = index;
+          if (name.includes('GLD') && name.includes('MEN') && (name.includes('OBJ') || name.includes('BUT'))) colMap.gld_men_obj = index;
+          if (name.includes('GLD') && name.includes('MEN') && (name.includes('REAL') || name.includes('FAIT'))) colMap.gld_men_real = index;
+          if (name.includes('GLD') && name.includes('MEU') && (name.includes('OBJ') || name.includes('BUT'))) colMap.gld_meu_obj = index;
+          if (name.includes('GLD') && name.includes('MEU') && (name.includes('REAL') || name.includes('FAIT'))) colMap.gld_meu_real = index;
         });
         break;
       }
     }
 
-    // Vérification précise pour dire à l'utilisateur ce qui manque
-    if (headerRowIndex === -1) throw new Error("Impossible de trouver la ligne contenant 'CA N' et 'Budget'.");
-    if (colMap.ca_n === undefined) throw new Error("Colonne 'CA N' introuvable.");
-    if (colMap.budget === undefined) throw new Error("Colonne 'Budget' introuvable.");
+    if (headerRowIndex === -1) throw new Error("Impossible de trouver la ligne des titres (TRC, GLD...).");
 
-    console.log("🗺 Mapping des colonnes :", colMap);
+    console.log("Mapping :", colMap);
 
-    // 2. Préparer le Batch
+    // 2. TRAITEMENT AVEC FILL-DOWN (Région mémorisée)
     const batch = writeBatch(db);
     const todayStr = new Date().toISOString().split('T')[0];
+    const regionAggregator: Record<string, any> = {};
     
-    let countStores = 0;
-    let countRegions = 0;
+    let currentRegion = "INDÉFINI"; // On garde en mémoire la dernière région vue
+    let count = 0;
 
     for (let i = headerRowIndex + 1; i < rows.length; i++) {
       const row = rows[i];
-      const name = row[0]?.toString().trim(); // Nom en première colonne ?
+      
+      let regionName = cleanStr(row[0]);
+      let storeName = cleanStr(row[1]);
 
-      // On ignore les lignes vides ou bizarres
-      if (!name || name === "TOTAL" || name.includes("Regions et magasins") || name.length < 3) continue;
+      // --- LOGIQUE FILL-DOWN ---
+      // Si la case Région est remplie, on met à jour la région courante
+      if (regionName && regionName.length > 2) {
+        currentRegion = regionName;
+      } else {
+        // Sinon, on utilise la région mémorisée (celle de la ligne du dessus)
+        regionName = currentRegion;
+      }
 
-      // Nettoyage des valeurs (gestion des espaces insécables et des virgules)
-      const parseValue = (val: string) => {
-        if (!val) return 0;
-        // Remplace les espaces, remplace virgule par point
-        const cleaned = val.toString().replace(/\s/g, '').replace(',', '.');
-        const num = parseFloat(cleaned);
-        return isNaN(num) ? 0 : num;
-      };
+      // Nettoyage nom magasin
+      if (!storeName || storeName.length < 3) continue;
+      // On ignore si c'est une ligne de total ou si le nom du magasin = nom de la région
+      if (storeName === regionName || storeName === "TOTAL") continue;
 
-      const ca_n = parseValue(row[colMap.ca_n]);
-      const ca_n1 = parseValue(row[colMap.ca_n1]);
-      const budget = parseValue(row[colMap.budget]);
+      // Récupération valeurs
+      const trc_obj = colMap.trc_obj ? cleanNum(row[colMap.trc_obj]) : 0;
+      const trc_real = colMap.trc_real ? cleanNum(row[colMap.trc_real]) : 0;
+      const gld_men_obj = colMap.gld_men_obj ? cleanNum(row[colMap.gld_men_obj]) : 0;
+      const gld_men_real = colMap.gld_men_real ? cleanNum(row[colMap.gld_men_real]) : 0;
+      const gld_meu_obj = colMap.gld_meu_obj ? cleanNum(row[colMap.gld_meu_obj]) : 0;
+      const gld_meu_real = colMap.gld_meu_real ? cleanNum(row[colMap.gld_meu_real]) : 0;
 
-      // Si pas de budget, on évite la division par zéro
-      const percent_obj = budget > 0 ? (ca_n / budget) * 100 : 0;
-      const percent_prog = ca_n1 > 0 ? ((ca_n - ca_n1) / ca_n1) * 100 : 0;
+      // Calcul Score Global (Moyenne des % d'atteinte)
+      let scoreSum = 0;
+      let scoreCount = 0;
 
-      // Détection Type
-      const isStore = name.toUpperCase().startsWith("BUT ");
-      const type = isStore ? 'store' : 'region';
-      const docId = name.toLowerCase().replace(/[^a-z0-9]/g, '_');
+      if (trc_obj > 0) { scoreSum += (trc_real / trc_obj) * 100; scoreCount++; }
+      if (gld_men_obj > 0) { scoreSum += (gld_men_real / gld_men_obj) * 100; scoreCount++; }
+      if (gld_meu_obj > 0) { scoreSum += (gld_meu_real / gld_meu_obj) * 100; scoreCount++; }
 
-      if (isStore) countStores++; else countRegions++;
-
-      // Ajout Stats Journalières
-      const statsRef = doc(collection(db, "daily_stats"), `${todayStr}_${docId}`);
+      const globalPercent = scoreCount > 0 ? (scoreSum / scoreCount) : 0;
+      const storeId = storeName.toLowerCase().replace(/[^a-z0-9]/g, '_');
+      
+      // On écrit dans la base en utilisant 'currentRegion' qui est maintenant fiable
+      const statsRef = doc(collection(db, "daily_stats"), `${todayStr}_${storeId}`);
       batch.set(statsRef, {
-        date: todayStr,
-        name: name,
-        type: type,
-        ca_n,
-        ca_n1,
-        budget,
-        percent_obj: parseFloat(percent_obj.toFixed(2)),
-        percent_prog: parseFloat(percent_prog.toFixed(2)),
+        date: todayStr, name: storeName, region: currentRegion, type: 'store',
+        percent_obj: parseFloat(globalPercent.toFixed(2)),
+        details: { trc: trc_real, trc_obj, gld_men: gld_men_real, gld_men_obj, gld_meu: gld_meu_real, gld_meu_obj },
         last_updated: Timestamp.now()
       });
 
-      // Mise à jour Collection Régions (pour le terrain)
-      if (type === 'region') {
-        const regionRef = doc(collection(db, "regions"), docId);
-        batch.set(regionRef, {
-          name: name,
-          current_score_obj: parseFloat(percent_obj.toFixed(2)),
-          current_score_prog: parseFloat(percent_prog.toFixed(2)),
-          last_update: todayStr
-        }, { merge: true });
+      // Agrégation Région
+      if (!regionAggregator[currentRegion]) {
+        regionAggregator[currentRegion] = { 
+          trc_n: 0, trc_obj: 0, men_n: 0, men_obj: 0, meu_n: 0, meu_obj: 0, count: 0 
+        };
       }
+      const agg = regionAggregator[currentRegion];
+      agg.trc_n += trc_real; agg.trc_obj += trc_obj;
+      agg.men_n += gld_men_real; agg.men_obj += gld_men_obj;
+      agg.meu_n += gld_meu_real; agg.meu_obj += gld_meu_obj;
+      agg.count++;
+      
+      count++;
     }
 
-    console.log(`📤 Envoi de ${countStores} magasins et ${countRegions} régions vers Firebase...`);
+    // Sauvegarde Régions
+    for (const [rName, data] of Object.entries(regionAggregator)) {
+      let rScoreSum = 0;
+      let rScoreCount = 0;
+
+      if (data.trc_obj > 0) { rScoreSum += (data.trc_n / data.trc_obj) * 100; rScoreCount++; }
+      if (data.men_obj > 0) { rScoreSum += (data.men_n / data.men_obj) * 100; rScoreCount++; }
+      if (data.meu_obj > 0) { rScoreSum += (data.meu_n / data.meu_obj) * 100; rScoreCount++; }
+
+      const finalScore = rScoreCount > 0 ? (rScoreSum / rScoreCount) : 0;
+      const regionId = rName.toLowerCase().replace(/[^a-z0-9]/g, '_');
+      
+      batch.set(doc(collection(db, "regions"), regionId), {
+        name: rName, 
+        current_score_obj: parseFloat(finalScore.toFixed(2)),
+        nb_stores: data.count, 
+        last_update: todayStr
+      }, { merge: true });
+    }
+
     await batch.commit();
   };
 
@@ -152,35 +190,35 @@ export default function AdminUpload() {
     <div className="p-6 max-w-xl mx-auto bg-white rounded-xl shadow-md border border-gray-100">
       <h2 className="text-xl font-bold mb-4 text-gray-800 flex items-center gap-2">
         <Upload className="w-5 h-5 text-blue-600" />
-        Mise à jour Quotidienne
+        Mise à jour (Force Colonnes A/B + Fill-Down)
       </h2>
-      
       <div className="flex flex-col gap-4">
-        <label className="flex flex-col items-center justify-center w-full h-32 border-2 border-gray-300 border-dashed rounded-lg cursor-pointer bg-gray-50 hover:bg-gray-100 transition-colors">
+        <label className="flex flex-col items-center justify-center w-full h-32 border-2 border-blue-100 border-dashed rounded-lg cursor-pointer bg-blue-50/50 hover:bg-blue-50 transition-colors">
           <div className="flex flex-col items-center justify-center pt-5 pb-6">
-            <FileUp className="w-8 h-8 mb-3 text-gray-400" />
-            <p className="mb-2 text-sm text-gray-500"><span className="font-semibold">Uploader le CSV</span></p>
+            <FileUp className="w-8 h-8 mb-3 text-blue-400" />
+            <p className="mb-2 text-sm text-gray-500 font-medium">Uploader CSV</p>
           </div>
           <input type="file" className="hidden" accept=".csv" onChange={handleFileUpload} disabled={loading} />
         </label>
 
-        {loading && (
-          <div className="flex items-center gap-2 text-blue-600 font-medium justify-center">
-            <Loader2 className="animate-spin w-5 h-5" />
-            Analyse en cours...
+        {loading && <div className="text-center text-blue-600"><Loader2 className="animate-spin inline mr-2"/> Traitement...</div>}
+        
+        {filePreview && (
+          <div className="bg-slate-900 text-slate-200 p-3 rounded text-[10px] font-mono overflow-x-auto border border-slate-700">
+            <pre className="whitespace-pre-wrap">{filePreview}</pre>
           </div>
         )}
 
         {status.type === 'error' && (
-          <div className="text-red-600 text-sm bg-red-50 p-3 rounded border border-red-200">
-             <strong>Erreur :</strong> {status.msg}
-             <p className="mt-1 text-xs text-red-500">Ouvre la console (F12) pour voir les détails techniques.</p>
+          <div className="flex items-start gap-2 text-red-600 text-sm bg-red-50 p-3 rounded border border-red-200">
+            <AlertTriangle className="w-5 h-5 shrink-0" />
+            <div><strong className="block mb-1">Erreur :</strong>{status.msg}</div>
           </div>
         )}
 
         {status.type === 'success' && (
-          <div className="text-green-600 text-sm bg-green-50 p-3 rounded border border-green-200">
-             ✅ {status.msg}
+          <div className="flex items-center gap-2 text-green-600 text-sm bg-green-50 p-3 rounded border border-green-200">
+            <CheckCircle className="w-5 h-5" /> {status.msg}
           </div>
         )}
       </div>
