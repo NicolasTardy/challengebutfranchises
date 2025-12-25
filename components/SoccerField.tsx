@@ -24,19 +24,19 @@ const TRAINING_VIDEO_URL = "https://www.youtube.com/embed/IvUMIA4LosA";
 const OBSTACLES = [
   { name: "Inflation", pos: 8, icon: TrendingUp, color: "text-red-400", desc: "Le prix monte ? Montez le niveau de service !" },
   { name: "Morosité", pos: 14, icon: Frown, color: "text-slate-400", desc: "Soyez le rayon de soleil du client." },
-  { name: "Pénurie", pos: 20, icon: PackageX, color: "text-orange-400", desc: "Vendez ce qui est disponible !" },
-  { name: "Web", pos: 26, icon: Globe, color: "text-blue-400", desc: "Le conseil humain est irremplaçable." },
+  { name: "Pénurie Produits", pos: 20, icon: PackageX, color: "text-orange-400", desc: "Vendez ce qui est disponible !" },
+  { name: "PurePlayers", pos: 26, icon: Globe, color: "text-blue-400", desc: "Le conseil humain est irremplaçable." },
   { name: "Baisse Fréq.", pos: 32, icon: Users, color: "text-purple-400", desc: "Chaque visiteur doit devenir un client." },
   { name: "Turnover", pos: 38, icon: XCircle, color: "text-yellow-400", desc: "Intégrez vite, formez mieux." },
-  { name: "Refus Crédit", pos: 44, icon: Wallet, color: "text-red-500", desc: "Proposez le paiement en plusieurs fois." },
+  { name: "Pouvoir d'achat en baisse", pos: 44, icon: Wallet, color: "text-red-500", desc: "Proposez le paiement en plusieurs fois." },
   { name: "Météo", pos: 50, icon: CloudRain, color: "text-cyan-300", desc: "Il pleut ? Vendez du confort intérieur !" },
   { name: "Bug Info", pos: 56, icon: AlertTriangle, color: "text-amber-400", desc: "Restez zen, le papier marche toujours." },
-  { name: "Formation", pos: 62, icon: GraduationCap, color: "text-pink-400", desc: "La compétence crée la confiance." },
+  { name: "Manque Formation", pos: 62, icon: GraduationCap, color: "text-pink-400", desc: "La compétence crée la confiance." },
   { name: "Retard Liv.", pos: 68, icon: Clock, color: "text-orange-500", desc: "Anticipez et communiquez." },
   { name: "Charges", pos: 74, icon: TrendingUp, color: "text-red-600", desc: "Optimisez chaque ressource." },
   { name: "Pessimisme", pos: 80, icon: Frown, color: "text-gray-400", desc: "L'énergie positive est contagieuse." },
   { name: "Travaux", pos: 86, icon: HardHat, color: "text-yellow-500", desc: "C'est temporaire, la qualité reste." },
-  { name: "Résistance", pos: 92, icon: ShieldBan, color: "text-stone-400", desc: "Le changement est une opportunité." },
+  { name: "Résistance au changement", pos: 92, icon: ShieldBan, color: "text-stone-400", desc: "Le changement est une opportunité." },
 ];
 
 interface RegionData {
@@ -86,7 +86,7 @@ export default function SoccerField() {
         id: doc.id,
         ...doc.data()
       })) as RegionData[];
-      
+       
       regionsList.sort((a, b) => a.name.localeCompare(b.name));
 
       const now = FAKE_TODAY || new Date(); 
@@ -96,7 +96,7 @@ export default function SoccerField() {
       if (elapsed > totalDuration) elapsed = totalDuration;
       const progressRatio = elapsed / totalDuration; 
       const days = Math.ceil(elapsed / (1000 * 60 * 60 * 24));
-      
+       
       const leaderScore = Math.max(...regionsList.map(r => r.current_score_obj || 0));
       const safeLeaderScore = leaderScore > 0 ? leaderScore : 1000;
       let projectedGoal = (safeLeaderScore / progressRatio) * 1.05;
@@ -181,7 +181,7 @@ export default function SoccerField() {
       {showVideoModal && (
         <div className="fixed inset-0 z-[120] flex items-center justify-center p-4 bg-black/95 backdrop-blur-md animate-fade-in">
           <div className="w-full max-w-4xl flex flex-col items-center animate-scale-in">
-             
+              
              {/* Header Vidéo */}
              <div className="w-full flex justify-between items-center text-white mb-4">
                <div className="flex items-center gap-3">
@@ -422,7 +422,7 @@ export default function SoccerField() {
                 const laneHeight = 100 / (regions.length || 15);
                 const verticalPercent = 2 + (index * laneHeight); 
                 const isAheadOfTime = safePosition > (timeProgress * 93);
-                
+               
                 // --- ON DÉFINIT LE NOM D'AFFICHAGE ICI ---
                 const displayName = region.pseudo || region.name;
                 const displayInitials = getInitials(displayName);
@@ -437,7 +437,7 @@ export default function SoccerField() {
                     className="absolute z-20 cursor-pointer group touch-manipulation h-[6%]"
                   >
                     <div className="flex flex-col items-center relative w-24">
-                      
+                       
                       {/* BULLE INFO */}
                       <div className="opacity-0 group-hover:opacity-100 transition-all absolute -top-12 left-1/2 -translate-x-1/2 bg-slate-900 text-white px-3 py-2 rounded-lg shadow-2xl z-50 flex flex-col items-center border border-slate-700 pointer-events-none min-w-[120px]">
                          <div className="flex items-center gap-1">
@@ -461,14 +461,14 @@ export default function SoccerField() {
 
                       <motion.div whileHover={{ scale: 1.2 }} whileTap={{ scale: 0.9 }} className="relative flex items-center justify-center w-full">
                         <div className="absolute -left-8 opacity-60 text-white/70 text-[10px] font-mono font-bold shadow-black drop-shadow-md">#{index + 1}</div>
-                        
+                         
                         {/* AVATAR AVEC INITIALES */}
                         <div className={`w-10 h-10 rounded-full border-[3px] shadow-[0_4px_15px_rgba(0,0,0,0.4)] flex items-center justify-center overflow-hidden bg-gradient-to-br z-10 
                           ${isAheadOfTime ? 'from-yellow-400 via-orange-500 to-red-600 border-white ring-4 ring-yellow-400/40' : 'from-blue-500 to-blue-900 border-slate-200'}
                         `}>
                            {isAheadOfTime ? <Flame className="text-white w-5 h-5 drop-shadow-md animate-pulse" /> : <span className="text-[10px] font-black text-white tracking-tighter">{displayInitials}</span>}
                         </div>
-                        
+                         
                         {/* ETIQUETTE NOM (CORRIGÉE : UTILISE DISPLAYNAME) */}
                         <div className="absolute top-full mt-1.5 bg-black/60 backdrop-blur-md px-1.5 py-0.5 rounded border border-white/10 w-32 text-center shadow-lg">
                           <span className="text-[9px] font-bold text-white uppercase block truncate">{displayName}</span>

@@ -69,7 +69,7 @@ export default function StoreListModal({ regionName, regionDisplayName, onClose 
       // ON UTILISE TOUJOURS regionName (le vrai nom) POUR CHERCHER DANS LA BASE
       const q = query(collection(db, "daily_stats"), where("region", "==", regionName));
       const querySnapshot = await getDocs(q);
-      
+       
       const storesList: StoreData[] = [];
       querySnapshot.forEach((doc) => {
         const data = doc.data();
@@ -78,7 +78,7 @@ export default function StoreListModal({ regionName, regionDisplayName, onClose 
         }
       });
       storesList.sort((a, b) => b.points - a.points);
-      
+       
       const now = FAKE_TODAY || new Date(); 
       const totalDuration = END_DATE.getTime() - START_DATE.getTime();
       let elapsed = now.getTime() - START_DATE.getTime();
