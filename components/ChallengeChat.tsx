@@ -3,13 +3,14 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { collection, addDoc, query, orderBy, onSnapshot, limit, Timestamp } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
-import { MessageSquare, Send, X, Shield, Swords, User } from 'lucide-react';
+import { Send, X, Shield, Swords } from 'lucide-react';
 
 interface Message {
   id: string;
   text: string;
   sender: string;
   region: string;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   createdAt: any;
 }
 

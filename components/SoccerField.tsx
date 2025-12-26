@@ -6,7 +6,7 @@ import { onAuthStateChanged } from 'firebase/auth';
 import { db, auth } from '@/lib/firebase';
 import { motion, AnimatePresence } from 'framer-motion';
 import { 
-  Trophy, Flame, CalendarClock, Quote, Swords, X, Send, MessageCircle, Target,
+  Flame, CalendarClock, Quote, Swords, X, Send, MessageCircle, Target,
   TrendingUp, Frown, PackageX, Globe, Users, XCircle, CloudRain, AlertTriangle, 
   GraduationCap, Clock, Wallet, HardHat, ShieldBan, HelpCircle, Trash2,
   PlayCircle, MonitorPlay, Edit2, Map, ShieldAlert 
@@ -52,6 +52,7 @@ interface ChatMessage {
   text: string;
   sender: string;
   target?: string;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   createdAt: any;
 }
 
@@ -190,7 +191,7 @@ export default function SoccerField() {
                   <MonitorPlay className="w-6 h-6 text-white" />
                 </div>
                 <div>
-                  <h2 className="text-xl font-black uppercase tracking-widest text-red-500">Formation X'press</h2>
+                  <h2 className="text-xl font-black uppercase tracking-widest text-red-500">Formation X&apos;press</h2>
                   <p className="text-sm text-slate-400">2 minutes pour devenir un expert</p>
                 </div>
               </div>
@@ -229,7 +230,7 @@ export default function SoccerField() {
                   {activeVideoTab === 'presentation' ? (
                     <>🎯 Module 1 : Comment présenter la carte simplement ?</>
                   ) : (
-                    <>🛡️ Module 2 : Comment répondre aux "Non" ?</>
+                    <>🛡️ Module 2 : Comment répondre aux &quot;Non&quot; ?</>
                   )}
                 </h3>
             </div>
@@ -263,11 +264,11 @@ export default function SoccerField() {
         <div className="fixed inset-0 z-[110] flex items-center justify-center p-4 bg-black/90 backdrop-blur-sm animate-fade-in">
           <div className="bg-slate-800 border border-slate-600 rounded-2xl p-6 max-w-md w-full relative shadow-2xl">
             <button onClick={() => setShowHelpModal(false)} className="absolute top-4 right-4 text-slate-400 hover:text-white"><X /></button>
-            <h2 className="text-xl font-bold text-white mb-6 flex items-center gap-2"><HelpCircle className="text-blue-400" /> Mode d'emploi</h2>
+            <h2 className="text-xl font-bold text-white mb-6 flex items-center gap-2"><HelpCircle className="text-blue-400" /> Mode d&apos;emploi</h2>
             <div className="space-y-6">
               <div className="bg-slate-700/50 p-4 rounded-xl border-l-4 border-red-500">
                 <h3 className="text-sm font-black text-red-400 uppercase tracking-wider mb-2 flex items-center gap-2"><Swords className="w-4 h-4" /> Pour les DR</h3>
-                <p className="text-slate-300 text-xs leading-relaxed">Cliquez sur <b>"Espace DR"</b>. Simulez des duels et postez sur le Mur.</p>
+                <p className="text-slate-300 text-xs leading-relaxed">Cliquez sur <b>&quot;Espace DR&quot;</b>. Simulez des duels et postez sur le Mur.</p>
               </div>
               <div className="bg-slate-700/50 p-4 rounded-xl border-l-4 border-yellow-500">
                 <h3 className="text-sm font-black text-yellow-400 uppercase tracking-wider mb-2 flex items-center gap-2"><Target className="w-4 h-4" /> Magasins</h3>
@@ -377,7 +378,7 @@ export default function SoccerField() {
             <div className="bg-yellow-400/10 p-2 rounded-full shrink-0"><Quote className="w-6 h-6 text-yellow-400" /></div>
             <div>
               <h3 className="text-xs font-bold text-yellow-400 uppercase tracking-widest mb-1">Le mot du Coach</h3>
-              <p className="text-sm md:text-base font-medium italic text-slate-200">"Ce ne sont pas des obstacles, ce sont des étapes vers la victoire. <span className="text-white font-bold not-italic"> Prouvez que vous êtes les meilleurs commerçants de France !</span>"</p>
+              <p className="text-sm md:text-base font-medium italic text-slate-200">&quot;Ce ne sont pas des obstacles, ce sont des étapes vers la victoire. <span className="text-white font-bold not-italic"> Prouvez que vous êtes les meilleurs commerçants de France !</span>&quot;</p>
             </div>
          </div>
          <div className="flex gap-2 w-full md:w-auto flex-wrap">
@@ -388,7 +389,7 @@ export default function SoccerField() {
               }}
               className="bg-white hover:bg-red-50 text-red-600 px-3 py-2 rounded-lg font-black uppercase tracking-wider flex items-center justify-center gap-2 shadow-[0_0_15px_rgba(255,255,255,0.5)] transition-transform hover:scale-105 active:scale-95 text-xs whitespace-nowrap animate-pulse border-2 border-red-500"
             >
-               <PlayCircle className="w-4 h-4" /> Formation X'press
+               <PlayCircle className="w-4 h-4" /> Formation X&apos;press
             </button>
 
             <button onClick={() => setShowHelpModal(true)} className="bg-blue-600 hover:bg-blue-700 text-white px-3 py-2 rounded-lg font-bold flex items-center gap-2 shadow-lg transition-transform hover:scale-105" title="Comment jouer ?"><HelpCircle className="w-5 h-5" /></button>
@@ -419,7 +420,7 @@ export default function SoccerField() {
                 <div className="absolute left-1/2 top-0 bottom-0 w-[2px] bg-white/40"></div>
                 <div className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 w-[200px] h-[200px] border-[2px] border-white/40 rounded-full"></div>
                 <div className="absolute top-0 bottom-0 w-[4px] bg-yellow-400/80 z-0 transition-all duration-1000 ease-out border-x border-yellow-200" style={{ left: `${timeProgress * 93}%` }}>
-                   <div className="absolute -top-6 left-1/2 -translate-x-1/2 bg-yellow-400 text-yellow-900 text-[10px] font-black px-2 py-1 rounded shadow-lg whitespace-nowrap z-20 uppercase tracking-wider">Aujourd'hui</div>
+                   <div className="absolute -top-6 left-1/2 -translate-x-1/2 bg-yellow-400 text-yellow-900 text-[10px] font-black px-2 py-1 rounded shadow-lg whitespace-nowrap z-20 uppercase tracking-wider">Aujourd&apos;hui</div>
                 </div>
                 <div className="absolute right-0 top-0 bottom-0 w-[6%] bg-red-600 border-l-[6px] border-white flex items-center justify-center shadow-2xl z-0">
                    <div className="relative w-28 h-28 md:w-40 md:h-40 border-[8px] border-white bg-red-600 flex items-center justify-center shadow-[0_0_30px_rgba(0,0,0,0.5)] transform -rotate-90 md:rotate-0">
@@ -436,7 +437,7 @@ export default function SoccerField() {
               <div key={idx} className="absolute top-1/2 -translate-y-1/2 z-10 group/obs cursor-help" style={{ left: `${obs.pos}%` }}>
                 <div className="opacity-0 group-hover/obs:opacity-100 transition-all absolute bottom-full mb-4 left-1/2 -translate-x-1/2 bg-black/90 text-white p-3 rounded-xl border border-yellow-400/50 w-48 text-center z-50 pointer-events-none transform scale-90 group-hover/obs:scale-100">
                   <h4 className="text-xs font-bold text-yellow-400 uppercase mb-1">{obs.name}</h4>
-                  <p className="text-[10px] leading-tight italic">"{obs.desc}"</p>
+                  <p className="text-[10px] leading-tight italic">&quot;{obs.desc}&quot;</p>
                 </div>
                 <motion.div animate={{ y: [0, -20, 0] }} transition={{ duration: 5, repeat: Infinity, ease: "easeInOut", delay: idx * 0.3 }} className="flex flex-col items-center justify-center w-32">
                   <div className="w-20 h-20 md:w-24 md:h-24 bg-slate-900/60 backdrop-blur-md border-[3px] border-white/30 rounded-3xl flex items-center justify-center shadow-2xl relative overflow-hidden">

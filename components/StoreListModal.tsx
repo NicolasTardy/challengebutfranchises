@@ -5,7 +5,7 @@ import { collection, query, where, getDocs, onSnapshot, orderBy, limit, addDoc, 
 import { onAuthStateChanged } from 'firebase/auth';
 import { db, auth } from '@/lib/firebase';
 import { 
-  X, Store, Trophy, Flame, TrendingUp, PackageX, Hammer, CloudRain, 
+  X, Store, Trophy, Flame, 
   MessageCircle, Send, Swords, Trash2, Target 
 } from 'lucide-react';
 import { motion } from 'framer-motion';
@@ -14,14 +14,6 @@ import { motion } from 'framer-motion';
 const START_DATE = new Date("2026-01-05");
 const END_DATE = new Date("2026-02-06");
 const FAKE_TODAY = null; 
-
-const OBSTACLES = [
-  { pos: 15, icon: Flame, color: "text-orange-400" },
-  { pos: 35, icon: CloudRain, color: "text-cyan-300" },
-  { pos: 55, icon: TrendingUp, color: "text-red-400" },
-  { pos: 75, icon: PackageX, color: "text-purple-400" },
-  { pos: 90, icon: Hammer, color: "text-yellow-400" },
-];
 
 interface StoreData {
   id: string;
@@ -34,6 +26,7 @@ interface ChatMessage {
   text: string;
   sender: string;
   target?: string;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   createdAt: any;
 }
 
@@ -292,7 +285,7 @@ export default function StoreListModal({ regionName, regionDisplayName, onClose 
                            const s1 = stores.find(s => s.name === chatSender)?.points || 0;
                            const s2 = stores.find(s => s.name === chatTarget)?.points || 0;
                            const diff = s1 - s2;
-                           return diff > 0 ? <span className="text-green-400">🚀 Je te bats de {diff.toLocaleString()} pts !</span> : <span className="text-red-400">🐢 J'ai {Math.abs(diff).toLocaleString()} pts de retard...</span>
+                           return diff > 0 ? <span className="text-green-400">🚀 Je te bats de {diff.toLocaleString()} pts !</span> : <span className="text-red-400">🐢 J&apos;ai {Math.abs(diff).toLocaleString()} pts de retard...</span>
                         })()}
                      </div>
                   )}

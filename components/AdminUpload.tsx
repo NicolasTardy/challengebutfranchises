@@ -4,7 +4,7 @@ import React, { useState, useEffect } from 'react';
 import Papa from 'papaparse';
 import { db } from '@/lib/firebase';
 import { collection, writeBatch, doc, Timestamp, getDocs, query, updateDoc, onSnapshot, orderBy, limit, deleteDoc } from 'firebase/firestore';
-import { Upload, FileUp, Loader2, CheckCircle, AlertTriangle, Eye, Trash2, Edit2, Save, X, MessageCircle, ShieldAlert } from 'lucide-react';
+import { FileUp, Loader2, CheckCircle, AlertTriangle, Trash2, Edit2, Save, X, MessageCircle, ShieldAlert } from 'lucide-react';
 
 interface Region {
   id: string;
@@ -16,6 +16,7 @@ interface ChatMessage {
   id: string;
   text: string;
   sender: string;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   createdAt: any;
   region?: string;
 }
@@ -23,7 +24,6 @@ interface ChatMessage {
 export default function AdminUpload() {
   const [loading, setLoading] = useState(false);
   const [status, setStatus] = useState<{ type: 'success' | 'error' | 'idle', msg: string }>({ type: 'idle', msg: '' });
-  const [filePreview, setFilePreview] = useState<string | null>(null);
   
   // États Pseudos
   const [regions, setRegions] = useState<Region[]>([]);
@@ -98,24 +98,22 @@ export default function AdminUpload() {
     if (!file) return;
     setLoading(true);
     setStatus({ type: 'idle', msg: '' });
-    setFilePreview(null);
 
     Papa.parse(file, {
       header: true,
       skipEmptyLines: 'greedy',
       delimiter: ";", // CORRECTION IMPORTANTE : Forcer le délimiteur point-virgule
       encoding: "ISO-8859-1", 
-      complete: async (results) => {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      complete: async (results: any) => {
         try {
-          const preview = results.data.slice(0, 3).map((row: any) => 
-            `${row.MAGASINS || row.magasins} | ${row.REGION || row.region} | ${row.points}`
-          ).join('\n');
-          setFilePreview(preview);
           await clearDatabase();
-          await processData(results.data);
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          await processData(results.data as any[]);
           setLoading(false);
           setStatus({ type: 'success', msg: 'Mise à jour réussie ! 🏆' });
           fetchRegions(); 
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         } catch (error: any) {
           setLoading(false);
           setStatus({ type: 'error', msg: error.message });
@@ -137,6 +135,7 @@ export default function AdminUpload() {
     if (sSnap.size > 0) await batch.commit();
   };
 
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const processData = async (data: any[]) => {
     const batch = writeBatch(db);
     const todayStr = new Date().toISOString().split('T')[0];

@@ -17,7 +17,7 @@ export default function LoginPage() {
     try {
       await signInWithEmailAndPassword(auth, email, password);
       router.push('/'); // Redirection vers l'accueil après succès
-    } catch (err: any) {
+    } catch {
       setError("Email ou mot de passe incorrect.");
     }
   };
