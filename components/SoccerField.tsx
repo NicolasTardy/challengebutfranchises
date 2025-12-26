@@ -9,7 +9,7 @@ import {
   Trophy, Flame, CalendarClock, Quote, Swords, X, Send, MessageCircle, Target,
   TrendingUp, Frown, PackageX, Globe, Users, XCircle, CloudRain, AlertTriangle, 
   GraduationCap, Clock, Wallet, HardHat, ShieldBan, HelpCircle, Trash2,
-  PlayCircle, MonitorPlay, Edit2, Map, ShieldAlert // Ajout de Map et ShieldAlert
+  PlayCircle, MonitorPlay, Edit2, Map, ShieldAlert 
 } from 'lucide-react';
 import StoreListModal from './StoreListModal';
 
@@ -18,9 +18,9 @@ const START_DATE = new Date("2026-01-05");
 const END_DATE = new Date("2026-02-06");
 const FAKE_TODAY = null; 
 
-// 📺 URL des vidéos de formation (À remplacer par tes liens YouTube embed)
-const VIDEO_URL_PRESENTATION = "https://www.youtube.com/embed/C4suoKc1exc"; // Vidéo 1 : Présenter la Carte
-const VIDEO_URL_OBJECTIONS = "https://www.youtube.com/embed/0jngayzx-jQ";   // Vidéo 2 : Traiter les Objections
+// 📺 URL des vidéos de formation
+const VIDEO_URL_PRESENTATION = "https://www.youtube.com/embed/C4suoKc1exc"; 
+const VIDEO_URL_OBJECTIONS = "https://www.youtube.com/embed/0jngayzx-jQ"; 
 
 const OBSTACLES = [
   { name: "Inflation", pos: 8, icon: TrendingUp, color: "text-red-400", desc: "Le prix monte ? Montez le niveau de service !" },
@@ -43,7 +43,7 @@ const OBSTACLES = [
 interface RegionData {
   id: string;
   name: string;
-  pseudo?: string; // Le Pseudo est ici
+  pseudo?: string;
   current_score_obj: number;
 }
 
@@ -90,7 +90,7 @@ export default function SoccerField() {
         id: doc.id,
         ...doc.data()
       })) as RegionData[];
-       
+        
       regionsList.sort((a, b) => a.name.localeCompare(b.name));
 
       const now = FAKE_TODAY || new Date(); 
@@ -100,7 +100,7 @@ export default function SoccerField() {
       if (elapsed > totalDuration) elapsed = totalDuration;
       const progressRatio = elapsed / totalDuration; 
       const days = Math.ceil(elapsed / (1000 * 60 * 60 * 24));
-       
+        
       const leaderScore = Math.max(...regionsList.map(r => r.current_score_obj || 0));
       const safeLeaderScore = leaderScore > 0 ? leaderScore : 1000;
       let projectedGoal = (safeLeaderScore / progressRatio) * 1.05;
@@ -129,13 +129,12 @@ export default function SoccerField() {
 
   const getRegionById = (id: string) => regions.find(r => r.id === id);
   
-  // Helper pour afficher le bon nom (Pseudo ou Vrai nom)
   const getDisplayName = (r?: RegionData) => r ? (r.pseudo || r.name) : "???";
 
-  // Initials Intelligentes
+  // CORRECTION ICI : Meilleure gestion des initiales pour supprimer "BUT" et "FRANCHISE"
   const getInitials = (name: string) => {
     if (!name) return "??";
-    const cleanName = name.replace(/BUT /i, '').trim(); 
+    const cleanName = name.replace(/BUT /i, '').replace(/FRANCHISE /i, '').trim(); 
     const parts = cleanName.split(' ');
     if (parts.length > 1) {
       return (parts[0][0] + parts[1][0]).toUpperCase();
@@ -143,7 +142,6 @@ export default function SoccerField() {
     return cleanName.substring(0, 2).toUpperCase();
   };
 
-  // Mise à jour du pseudo (Admin)
   const handleUpdatePseudo = async (regionId: string, currentPseudo: string) => {
     const newPseudo = prompt("Nouveau nom d'équipe (Pseudo) :", currentPseudo);
     if (newPseudo !== null) {
@@ -175,60 +173,58 @@ export default function SoccerField() {
     <>
       {selectedRegion && (
         <StoreListModal 
-          regionName={selectedRegion.name} // On garde le nom technique pour la requête
-          regionDisplayName={selectedRegion.pseudo || selectedRegion.name} // On passe le pseudo pour l'affichage
+          regionName={selectedRegion.name} 
+          regionDisplayName={selectedRegion.pseudo || selectedRegion.name} 
           onClose={() => setSelectedRegion(null)} 
         />
       )}
 
-      {/* --- MODALE VIDÉOS FORMATION (DOUBLE) --- */}
+      {/* --- MODALE VIDÉOS --- */}
       {showVideoModal && (
         <div className="fixed inset-0 z-[120] flex items-center justify-center p-4 bg-black/95 backdrop-blur-md animate-fade-in">
           <div className="w-full max-w-5xl flex flex-col items-center animate-scale-in">
-              
-             {/* Header Vidéo */}
-             <div className="w-full flex justify-between items-center text-white mb-6">
-               <div className="flex items-center gap-3">
-                 <div className="bg-red-600 p-2 rounded-full animate-pulse shadow-[0_0_15px_rgba(220,38,38,0.7)]">
-                   <MonitorPlay className="w-6 h-6 text-white" />
-                 </div>
-                 <div>
-                   <h2 className="text-xl font-black uppercase tracking-widest text-red-500">Formation X'press</h2>
-                   <p className="text-sm text-slate-400">2 minutes pour devenir un expert</p>
-                 </div>
-               </div>
-               <button onClick={() => setShowVideoModal(false)} className="bg-white/10 hover:bg-white/20 p-2 rounded-full transition-all flex items-center gap-2 group">
-                 <span className="text-xs font-bold uppercase hidden group-hover:block">Fermer</span>
-                 <X className="w-6 h-6" />
-               </button>
-             </div>
+             
+            <div className="w-full flex justify-between items-center text-white mb-6">
+              <div className="flex items-center gap-3">
+                <div className="bg-red-600 p-2 rounded-full animate-pulse shadow-[0_0_15px_rgba(220,38,38,0.7)]">
+                  <MonitorPlay className="w-6 h-6 text-white" />
+                </div>
+                <div>
+                  <h2 className="text-xl font-black uppercase tracking-widest text-red-500">Formation X'press</h2>
+                  <p className="text-sm text-slate-400">2 minutes pour devenir un expert</p>
+                </div>
+              </div>
+              <button onClick={() => setShowVideoModal(false)} className="bg-white/10 hover:bg-white/20 p-2 rounded-full transition-all flex items-center gap-2 group">
+                <span className="text-xs font-bold uppercase hidden group-hover:block">Fermer</span>
+                <X className="w-6 h-6" />
+              </button>
+            </div>
 
-             {/* SÉLECTEUR DE VIDÉOS (TABS) */}
-             <div className="flex w-full mb-4 bg-slate-800 p-1 rounded-xl">
-               <button 
-                 onClick={() => setActiveVideoTab('presentation')}
-                 className={`flex-1 flex items-center justify-center gap-2 py-3 rounded-lg text-sm font-bold uppercase tracking-wide transition-all ${
-                   activeVideoTab === 'presentation' 
-                   ? 'bg-red-600 text-white shadow-lg' 
-                   : 'text-slate-400 hover:text-white hover:bg-white/5'
-                 }`}
-               >
-                 <Map className="w-4 h-4" /> 1. Présenter la Carte
-               </button>
-               <button 
-                 onClick={() => setActiveVideoTab('objections')}
-                 className={`flex-1 flex items-center justify-center gap-2 py-3 rounded-lg text-sm font-bold uppercase tracking-wide transition-all ${
-                   activeVideoTab === 'objections' 
-                   ? 'bg-red-600 text-white shadow-lg' 
-                   : 'text-slate-400 hover:text-white hover:bg-white/5'
-                 }`}
-               >
-                 <ShieldAlert className="w-4 h-4" /> 2. Traiter les Objections
-               </button>
-             </div>
+            {/* SÉLECTEUR DE VIDÉOS */}
+            <div className="flex w-full mb-4 bg-slate-800 p-1 rounded-xl">
+              <button 
+                onClick={() => setActiveVideoTab('presentation')}
+                className={`flex-1 flex items-center justify-center gap-2 py-3 rounded-lg text-sm font-bold uppercase tracking-wide transition-all ${
+                  activeVideoTab === 'presentation' 
+                  ? 'bg-red-600 text-white shadow-lg' 
+                  : 'text-slate-400 hover:text-white hover:bg-white/5'
+                }`}
+              >
+                <Map className="w-4 h-4" /> 1. Présenter la Carte
+              </button>
+              <button 
+                onClick={() => setActiveVideoTab('objections')}
+                className={`flex-1 flex items-center justify-center gap-2 py-3 rounded-lg text-sm font-bold uppercase tracking-wide transition-all ${
+                  activeVideoTab === 'objections' 
+                  ? 'bg-red-600 text-white shadow-lg' 
+                  : 'text-slate-400 hover:text-white hover:bg-white/5'
+                }`}
+              >
+                <ShieldAlert className="w-4 h-4" /> 2. Traiter les Objections
+              </button>
+            </div>
 
-             {/* TITRE DU MODULE ACTIF */}
-             <div className="mb-2 text-center">
+            <div className="mb-2 text-center">
                 <h3 className="text-lg font-bold text-white flex items-center justify-center gap-2">
                   {activeVideoTab === 'presentation' ? (
                     <>🎯 Module 1 : Comment présenter la carte simplement ?</>
@@ -236,29 +232,28 @@ export default function SoccerField() {
                     <>🛡️ Module 2 : Comment répondre aux "Non" ?</>
                   )}
                 </h3>
-             </div>
+            </div>
 
-             {/* Lecteur Vidéo */}
-             <div className="relative w-full aspect-video bg-black rounded-2xl shadow-2xl overflow-hidden border-2 border-slate-800">
-               <iframe 
-                 key={activeVideoTab} // Force le reload de l'iframe quand on change d'onglet
-                 width="100%" height="100%" 
-                 src={activeVideoTab === 'presentation' ? VIDEO_URL_PRESENTATION : VIDEO_URL_OBJECTIONS}
-                 title="Formation Video"
-                 frameBorder="0" 
-                 allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" 
-                 allowFullScreen
-               ></iframe>
-             </div>
+            <div className="relative w-full aspect-video bg-black rounded-2xl shadow-2xl overflow-hidden border-2 border-slate-800">
+              <iframe 
+                key={activeVideoTab} 
+                width="100%" height="100%" 
+                src={activeVideoTab === 'presentation' ? VIDEO_URL_PRESENTATION : VIDEO_URL_OBJECTIONS}
+                title="Formation Video"
+                frameBorder="0" 
+                allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" 
+                allowFullScreen
+              ></iframe>
+            </div>
 
-             <div className="mt-8 text-center">
-               <button 
-                 onClick={() => setShowVideoModal(false)}
-                 className="bg-white/10 hover:bg-white/20 text-white font-bold py-3 px-8 rounded-full transition-transform uppercase tracking-widest flex items-center gap-2 mx-auto"
-               >
-                 <X className="w-4 h-4" /> Retour au Terrain
-               </button>
-             </div>
+            <div className="mt-8 text-center">
+              <button 
+                onClick={() => setShowVideoModal(false)}
+                className="bg-white/10 hover:bg-white/20 text-white font-bold py-3 px-8 rounded-full transition-transform uppercase tracking-widest flex items-center gap-2 mx-auto"
+              >
+                <X className="w-4 h-4" /> Retour au Terrain
+              </button>
+            </div>
           </div>
         </div>
       )}
@@ -300,7 +295,6 @@ export default function SoccerField() {
                  <div className="flex items-center gap-4 justify-between">
                     <div className="flex-1 text-center">
                       <label className="text-[10px] text-blue-300 font-bold uppercase block mb-1">Ma Région</label>
-                      {/* SELECTEUR: Value = ID, Affiche = PSEUDO */}
                       <select className="w-full bg-slate-800 text-white p-2 rounded border border-blue-500/30 text-sm font-bold" value={duelLeftId} onChange={(e) => setDuelLeftId(e.target.value)}>
                         <option value="">Choisir...</option>
                         {regions.map(r => <option key={r.id} value={r.id}>{getDisplayName(r)}</option>)}
@@ -356,7 +350,6 @@ export default function SoccerField() {
                     <div className="flex-1 relative">
                        <select className="w-full bg-slate-900 text-blue-200 text-[10px] font-bold py-1.5 px-2 rounded border border-blue-500/30 focus:border-blue-500 outline-none appearance-none" value={chatSender} onChange={e => setChatSender(e.target.value)}>
                           <option value="">Je suis...</option>
-                          {/* Affiche le PSEUDO dans le chat */}
                           {regions.map(r => <option key={r.id} value={getDisplayName(r)}>{getDisplayName(r)}</option>)}
                        </select>
                     </div>
@@ -388,10 +381,9 @@ export default function SoccerField() {
             </div>
          </div>
          <div className="flex gap-2 w-full md:w-auto flex-wrap">
-            {/* BOUTON FORMATION X'PRESS (CLIGNOTANT) */}
             <button 
               onClick={() => {
-                setActiveVideoTab('presentation'); // Reset sur le 1er onglet à l'ouverture
+                setActiveVideoTab('presentation'); 
                 setShowVideoModal(true);
               }}
               className="bg-white hover:bg-red-50 text-red-600 px-3 py-2 rounded-lg font-black uppercase tracking-wider flex items-center justify-center gap-2 shadow-[0_0_15px_rgba(255,255,255,0.5)] transition-transform hover:scale-105 active:scale-95 text-xs whitespace-nowrap animate-pulse border-2 border-red-500"
@@ -465,8 +457,7 @@ export default function SoccerField() {
                 const laneHeight = 100 / (regions.length || 15);
                 const verticalPercent = 2 + (index * laneHeight); 
                 const isAheadOfTime = safePosition > (timeProgress * 93);
-               
-                // --- ON DÉFINIT LE NOM D'AFFICHAGE ICI ---
+                
                 const displayName = region.pseudo || region.name;
                 const displayInitials = getInitials(displayName);
 
@@ -480,7 +471,7 @@ export default function SoccerField() {
                     className="absolute z-20 cursor-pointer group touch-manipulation h-[6%]"
                   >
                     <div className="flex flex-col items-center relative w-24">
-                       
+                        
                       {/* BULLE INFO */}
                       <div className="opacity-0 group-hover:opacity-100 transition-all absolute -top-12 left-1/2 -translate-x-1/2 bg-slate-900 text-white px-3 py-2 rounded-lg shadow-2xl z-50 flex flex-col items-center border border-slate-700 pointer-events-none min-w-[120px]">
                          <div className="flex items-center gap-1">
@@ -504,15 +495,15 @@ export default function SoccerField() {
 
                       <motion.div whileHover={{ scale: 1.2 }} whileTap={{ scale: 0.9 }} className="relative flex items-center justify-center w-full">
                         <div className="absolute -left-8 opacity-60 text-white/70 text-[10px] font-mono font-bold shadow-black drop-shadow-md">#{index + 1}</div>
-                         
+                          
                         {/* AVATAR AVEC INITIALES */}
                         <div className={`w-10 h-10 rounded-full border-[3px] shadow-[0_4px_15px_rgba(0,0,0,0.4)] flex items-center justify-center overflow-hidden bg-gradient-to-br z-10 
                           ${isAheadOfTime ? 'from-yellow-400 via-orange-500 to-red-600 border-white ring-4 ring-yellow-400/40' : 'from-blue-500 to-blue-900 border-slate-200'}
                         `}>
                            {isAheadOfTime ? <Flame className="text-white w-5 h-5 drop-shadow-md animate-pulse" /> : <span className="text-[10px] font-black text-white tracking-tighter">{displayInitials}</span>}
                         </div>
-                         
-                        {/* ETIQUETTE NOM (CORRIGÉE : UTILISE DISPLAYNAME) */}
+                          
+                        {/* ETIQUETTE NOM */}
                         <div className="absolute top-full mt-1.5 bg-black/60 backdrop-blur-md px-1.5 py-0.5 rounded border border-white/10 w-32 text-center shadow-lg">
                           <span className="text-[9px] font-bold text-white uppercase block truncate">{displayName}</span>
                         </div>
