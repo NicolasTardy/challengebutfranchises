@@ -11,8 +11,8 @@ import {
 import { motion } from 'framer-motion';
 
 // --- CONFIG ---
-const START_DATE = new Date("2026-01-05");
-const END_DATE = new Date("2026-02-06");
+const START_DATE = new Date("2026-01-07");
+const END_DATE = new Date("2026-02-03T23:59:59");
 const FAKE_TODAY = null; 
 
 interface StoreData {
@@ -72,7 +72,10 @@ export default function StoreListModal({ regionName, regionDisplayName, onClose 
       });
       storesList.sort((a, b) => b.points - a.points);
        
-      const now = FAKE_TODAY || new Date(); 
+      // Force l'année 2026 tout en gardant le jour/mois actuel pour la progression automatique
+      const realNow = new Date();
+      const now = new Date(realNow.getFullYear(), realNow.getMonth(), realNow.getDate());
+      now.setFullYear(2026); 
       const totalDuration = END_DATE.getTime() - START_DATE.getTime();
       let elapsed = now.getTime() - START_DATE.getTime();
       if (elapsed < 0) elapsed = 1000 * 60 * 60 * 24; 

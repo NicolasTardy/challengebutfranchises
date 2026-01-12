@@ -57,7 +57,7 @@ interface ChatMessage {
 }
 
 // Fonction pour compter tous les jours (Inclus Samedi & Dimanche)
-const countBusinessDays = (start: Date, current: Date) => {
+const countTotalDays = (start: Date, current: Date) => {
   let count = 0;
   const d = new Date(start);
   const end = current > END_DATE ? END_DATE : current; // Ne pas dépasser la date de fin
@@ -125,7 +125,11 @@ export default function SoccerField() {
         
       regionsList.sort((a, b) => a.name.localeCompare(b.name));
 
-      const now = FAKE_TODAY || new Date(); 
+      // Force l'année 2026 tout en gardant le jour/mois actuel pour la progression automatique
+      const realNow = new Date();
+      const now = new Date(realNow.getFullYear(), realNow.getMonth(), realNow.getDate());
+      now.setFullYear(2026); 
+
       const totalDuration = END_DATE.getTime() - START_DATE.getTime();
       let elapsed = now.getTime() - START_DATE.getTime();
       if (elapsed < 0) elapsed = 1000 * 60 * 60 * 24; // Au moins un jour si avant le début
@@ -133,11 +137,9 @@ export default function SoccerField() {
       
       const progressRatio = elapsed / totalDuration; 
       
-      // Calcul des jours ouvrés écoulés (Lundi-Samedi)
-      // On retire 1 pour afficher les jours "complétés" (résultats de la veille). 
-      // Ex: Le 8 janvier (J2 réel), on affiche les résultats du 7 (J1).
-      const rawDays = countBusinessDays(START_DATE, now);
-      const days = Math.max(1, rawDays - 1);
+      // Calcul des jours écoulés (Inclus Samedi & Dimanche)
+      // On affiche le jour actuel réel (Ex: le 7 janvier = Jour 1)
+      const days = countTotalDays(START_DATE, now);
         
       const leaderScore = Math.max(...regionsList.map(r => r.current_score_obj || 0));
       const safeLeaderScore = leaderScore > 0 ? leaderScore : 1000;
@@ -147,7 +149,7 @@ export default function SoccerField() {
       setRegions(regionsList);
       setGoalScore(Math.floor(projectedGoal));
       setTimeProgress(progressRatio);
-      setDaysElapsed(days);
+      setDaysElapsed(Math.max(1, days)); // Minimum jour 1
     });
 
     const qMessages = query(collection(db, "messages"), orderBy("createdAt", "asc"), limit(50));
@@ -419,46 +421,38 @@ export default function SoccerField() {
         </div>
       )}
 
-      {/* --- ADMIN MESSAGE BANNER --- */}
-      {(adminMsg || isAdmin) && (
-        <div className="mb-4 bg-slate-900/80 border border-blue-500/30 p-3 rounded-lg text-center relative shadow-lg animate-fade-in">
-          {isEditingMsg ? (
-            <div className="flex flex-col gap-2">
-              <textarea 
-                className="w-full bg-black/50 text-white p-2 rounded border border-blue-500/50 outline-none text-sm"
-                rows={2}
-                value={tempMsg}
-                onChange={(e) => setTempMsg(e.target.value)}
-                placeholder="Message admin..."
-              />
-              <div className="flex justify-center gap-2">
-                <button onClick={handleSaveAdminMessage} className="bg-green-600 text-white px-3 py-1 rounded text-xs font-bold hover:bg-green-500">Enregistrer</button>
-                <button onClick={() => setIsEditingMsg(false)} className="bg-slate-600 text-white px-3 py-1 rounded text-xs font-bold hover:bg-slate-500">Annuler</button>
-              </div>
-            </div>
-          ) : (
-            <div className="flex items-center justify-center gap-2">
-               <span className="text-blue-200 font-medium text-sm md:text-base">{adminMsg || "Aucun message pour le moment."}</span>
-               {isAdmin && (
-                 <button 
-                   onClick={() => { setTempMsg(adminMsg); setIsEditingMsg(true); }}
-                   className="p-1 hover:bg-white/10 rounded-full transition-colors"
-                 >
-                   <Edit2 className="w-3 h-3 text-blue-400" />
-                 </button>
-               )}
-            </div>
-          )}
-        </div>
-      )}
+
 
       {/* --- BANDEAU MOTIVATION --- */}
       <div className="mb-4 bg-gradient-to-r from-slate-900 to-slate-800 rounded-xl p-4 border-l-4 border-yellow-400 shadow-lg flex flex-col md:flex-row items-start md:items-center gap-4 text-white justify-between">
          <div className="flex items-center gap-4 flex-1">
             <div className="bg-yellow-400/10 p-2 rounded-full shrink-0"><Quote className="w-6 h-6 text-yellow-400" /></div>
-            <div>
-              <h3 className="text-xs font-bold text-yellow-400 uppercase tracking-widest mb-1">Le mot du Coach</h3>
-              <p className="text-sm md:text-base font-medium italic text-slate-200">&quot;Ce ne sont pas des obstacles, ce sont des étapes vers la victoire. <span className="text-white font-bold not-italic"> Prouvez que vous êtes les meilleurs commerçants de France !</span>&quot;</p>
+            <div className="flex-1">
+              <div className="flex justify-between items-center mb-1">
+                 <h3 className="text-xs font-bold text-yellow-400 uppercase tracking-widest">Le mot du Coach</h3>
+                 {isAdmin && !isEditingMsg && (
+                    <button onClick={() => { setTempMsg(adminMsg || "Ce ne sont pas des obstacles, ce sont des étapes vers la victoire. Prouvez que vous êtes les meilleurs commerçants de France !"); setIsEditingMsg(true); }} className="text-[10px] text-slate-400 hover:text-white flex items-center gap-1"><Edit2 className="w-3 h-3"/> Modifier</button>
+                 )}
+              </div>
+              
+              {isEditingMsg ? (
+                 <div className="flex flex-col gap-2 animate-fade-in">
+                    <textarea 
+                      className="w-full bg-black/50 text-white p-2 rounded border border-yellow-400/50 outline-none text-sm font-medium"
+                      rows={2}
+                      value={tempMsg}
+                      onChange={(e) => setTempMsg(e.target.value)}
+                    />
+                    <div className="flex gap-2">
+                      <button onClick={handleSaveAdminMessage} className="bg-green-600 text-white px-3 py-1 rounded text-xs font-bold hover:bg-green-500">Enregistrer</button>
+                      <button onClick={() => setIsEditingMsg(false)} className="bg-slate-600 text-white px-3 py-1 rounded text-xs font-bold hover:bg-slate-500">Annuler</button>
+                    </div>
+                 </div>
+              ) : (
+                 <p className="text-sm md:text-base font-medium italic text-slate-200">
+                    &quot;{adminMsg || "Ce ne sont pas des obstacles, ce sont des étapes vers la victoire. Prouvez que vous êtes les meilleurs commerçants de France !"}&quot;
+                 </p>
+              )}
             </div>
          </div>
          <div className="flex gap-2 w-full md:w-auto flex-wrap">
@@ -482,7 +476,7 @@ export default function SoccerField() {
         <div className="px-4 py-3 flex items-center justify-between border-b border-white/20 bg-white/30">
           <div className="flex items-center gap-2 text-blue-900/80 font-black uppercase tracking-widest text-[10px] md:text-xs">
             <CalendarClock className="w-4 h-4 text-red-600" />
-            <span className="truncate">Jour {daysElapsed} / 26</span>
+            <span className="truncate">Jour {daysElapsed} / 28</span>
           </div>
           <div className="hidden md:flex items-center gap-2 text-[10px] font-bold text-red-700 bg-red-100 px-2 py-1 rounded-full">
             <span className="w-2 h-2 bg-red-500 rounded-full animate-pulse"></span> LIVE
