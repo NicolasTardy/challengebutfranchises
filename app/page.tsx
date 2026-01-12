@@ -20,7 +20,7 @@ export default function Home() {
   }, []);
 
   return (
-    <main className="min-h-screen bg-slate-200 p-2 md:p-4 font-sans">
+    <main className="min-h-screen bg-slate-200 pt-10 pb-2 px-2 md:pt-16 md:pb-4 md:px-4 font-sans">
       
       {/* HEADER */}
       <div className="max-w-7xl mx-auto flex justify-between items-center mb-4 px-2">
@@ -37,9 +37,9 @@ export default function Home() {
                </span>
                <button 
                  onClick={() => auth.signOut()}
-                 className="flex items-center gap-2 bg-slate-800 text-white px-3 py-1.5 rounded-lg text-xs font-bold hover:bg-slate-700 transition shadow-lg"
+                 className="flex items-center gap-2 bg-slate-800 text-white px-4 py-2.5 rounded-xl text-sm font-bold hover:bg-slate-700 transition shadow-xl active:scale-95"
                >
-                 <LogOut className="w-3 h-3" /> Déconnexion
+                 <LogOut className="w-4 h-4" /> Déconnexion
                </button>
              </div>
            ) : (

@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useEffect, useState, useRef } from 'react';
-import { collection, onSnapshot, addDoc, query, orderBy, limit, serverTimestamp, deleteDoc, doc, updateDoc } from 'firebase/firestore';
+import { collection, onSnapshot, addDoc, query, orderBy, limit, serverTimestamp, deleteDoc, doc, updateDoc, setDoc } from 'firebase/firestore';
 import { onAuthStateChanged } from 'firebase/auth';
 import { db, auth } from '@/lib/firebase';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -14,8 +14,8 @@ import {
 import StoreListModal from './StoreListModal';
 
 // --- CONFIGURATION ---
-const START_DATE = new Date("2026-01-05");
-const END_DATE = new Date("2026-02-06");
+const START_DATE = new Date("2026-01-07"); // Début le 7 Janvier
+const END_DATE = new Date("2026-02-03T23:59:59"); // Fin le 3 Février inclus
 const FAKE_TODAY = null; 
 
 // 📺 URL des vidéos de formation
@@ -56,6 +56,24 @@ interface ChatMessage {
   createdAt: any;
 }
 
+// Fonction pour compter tous les jours (Inclus Samedi & Dimanche)
+const countBusinessDays = (start: Date, current: Date) => {
+  let count = 0;
+  const d = new Date(start);
+  const end = current > END_DATE ? END_DATE : current; // Ne pas dépasser la date de fin
+  
+  // On remet les heures à 0 pour comparer des jours pleins
+  d.setHours(0,0,0,0);
+  const target = new Date(end);
+  target.setHours(0,0,0,0);
+
+  while (d <= target) {
+    count++;
+    d.setDate(d.getDate() + 1);
+  }
+  return count;
+};
+
 export default function SoccerField() {
   const [regions, setRegions] = useState<RegionData[]>([]);
   const [selectedRegion, setSelectedRegion] = useState<RegionData | null>(null);
@@ -83,8 +101,21 @@ export default function SoccerField() {
   const [timeProgress, setTimeProgress] = useState(0); 
   const [daysElapsed, setDaysElapsed] = useState(1);
 
+  // --- ADMIN MESSAGE ---
+  const [adminMsg, setAdminMsg] = useState("");
+  const [isEditingMsg, setIsEditingMsg] = useState(false);
+  const [tempMsg, setTempMsg] = useState("");
+
   useEffect(() => {
     const unsubAuth = onAuthStateChanged(auth, (user) => setIsAdmin(!!user));
+
+    // Admin message listener
+    const unsubSettings = onSnapshot(doc(db, "settings", "dashboard"), (docSnap) => {
+      if (docSnap.exists()) {
+        const data = docSnap.data();
+        setAdminMsg(data.adminMessage || "");
+      }
+    });
 
     const unsubRegions = onSnapshot(collection(db, "regions"), (snapshot) => {
       const regionsList = snapshot.docs.map(doc => ({
@@ -97,10 +128,16 @@ export default function SoccerField() {
       const now = FAKE_TODAY || new Date(); 
       const totalDuration = END_DATE.getTime() - START_DATE.getTime();
       let elapsed = now.getTime() - START_DATE.getTime();
-      if (elapsed < 0) elapsed = 1000 * 60 * 60 * 24; 
+      if (elapsed < 0) elapsed = 1000 * 60 * 60 * 24; // Au moins un jour si avant le début
       if (elapsed > totalDuration) elapsed = totalDuration;
+      
       const progressRatio = elapsed / totalDuration; 
-      const days = Math.ceil(elapsed / (1000 * 60 * 60 * 24));
+      
+      // Calcul des jours ouvrés écoulés (Lundi-Samedi)
+      // On retire 1 pour afficher les jours "complétés" (résultats de la veille). 
+      // Ex: Le 8 janvier (J2 réel), on affiche les résultats du 7 (J1).
+      const rawDays = countBusinessDays(START_DATE, now);
+      const days = Math.max(1, rawDays - 1);
         
       const leaderScore = Math.max(...regionsList.map(r => r.current_score_obj || 0));
       const safeLeaderScore = leaderScore > 0 ? leaderScore : 1000;
@@ -120,7 +157,7 @@ export default function SoccerField() {
       setTimeout(() => chatEndRef.current?.scrollIntoView({ behavior: "smooth" }), 100);
     });
 
-    return () => { unsubAuth(); unsubRegions(); unsubChat(); };
+    return () => { unsubAuth(); unsubRegions(); unsubChat(); unsubSettings(); };
   }, []);
 
   const getPosition = (score: number) => {
@@ -149,6 +186,16 @@ export default function SoccerField() {
       try {
         await updateDoc(doc(db, "regions", regionId), { pseudo: newPseudo });
       } catch (e) { console.error("Erreur update:", e); }
+    }
+  };
+
+  const handleSaveAdminMessage = async () => {
+    try {
+      await setDoc(doc(db, "settings", "dashboard"), { adminMessage: tempMsg }, { merge: true });
+      setIsEditingMsg(false);
+      setAdminMsg(tempMsg);
+    } catch (e) {
+      console.error("Error saving admin message:", e);
     }
   };
 
@@ -372,6 +419,39 @@ export default function SoccerField() {
         </div>
       )}
 
+      {/* --- ADMIN MESSAGE BANNER --- */}
+      {(adminMsg || isAdmin) && (
+        <div className="mb-4 bg-slate-900/80 border border-blue-500/30 p-3 rounded-lg text-center relative shadow-lg animate-fade-in">
+          {isEditingMsg ? (
+            <div className="flex flex-col gap-2">
+              <textarea 
+                className="w-full bg-black/50 text-white p-2 rounded border border-blue-500/50 outline-none text-sm"
+                rows={2}
+                value={tempMsg}
+                onChange={(e) => setTempMsg(e.target.value)}
+                placeholder="Message admin..."
+              />
+              <div className="flex justify-center gap-2">
+                <button onClick={handleSaveAdminMessage} className="bg-green-600 text-white px-3 py-1 rounded text-xs font-bold hover:bg-green-500">Enregistrer</button>
+                <button onClick={() => setIsEditingMsg(false)} className="bg-slate-600 text-white px-3 py-1 rounded text-xs font-bold hover:bg-slate-500">Annuler</button>
+              </div>
+            </div>
+          ) : (
+            <div className="flex items-center justify-center gap-2">
+               <span className="text-blue-200 font-medium text-sm md:text-base">{adminMsg || "Aucun message pour le moment."}</span>
+               {isAdmin && (
+                 <button 
+                   onClick={() => { setTempMsg(adminMsg); setIsEditingMsg(true); }}
+                   className="p-1 hover:bg-white/10 rounded-full transition-colors"
+                 >
+                   <Edit2 className="w-3 h-3 text-blue-400" />
+                 </button>
+               )}
+            </div>
+          )}
+        </div>
+      )}
+
       {/* --- BANDEAU MOTIVATION --- */}
       <div className="mb-4 bg-gradient-to-r from-slate-900 to-slate-800 rounded-xl p-4 border-l-4 border-yellow-400 shadow-lg flex flex-col md:flex-row items-start md:items-center gap-4 text-white justify-between">
          <div className="flex items-center gap-4 flex-1">
@@ -402,7 +482,7 @@ export default function SoccerField() {
         <div className="px-4 py-3 flex items-center justify-between border-b border-white/20 bg-white/30">
           <div className="flex items-center gap-2 text-blue-900/80 font-black uppercase tracking-widest text-[10px] md:text-xs">
             <CalendarClock className="w-4 h-4 text-red-600" />
-            <span className="truncate">Jour {daysElapsed} / 32</span>
+            <span className="truncate">Jour {daysElapsed} / 26</span>
           </div>
           <div className="hidden md:flex items-center gap-2 text-[10px] font-bold text-red-700 bg-red-100 px-2 py-1 rounded-full">
             <span className="w-2 h-2 bg-red-500 rounded-full animate-pulse"></span> LIVE
